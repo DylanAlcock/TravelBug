@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:fitsSystemWindows="true"
+android:orientation="vertical">
+
+
+    <fragment
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="666dp"
+        tools:context=".MapsActivity" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:background="@drawable/bg_round"
+        android:id="@+id/relLayout1">
+
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:id="@+id/ic_magnify"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="3dp"
+            android:src="@drawable/ic_magnify"
+            android:contentDescription="TODO">
+        </ImageView>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@+id/ic_magnify"
+            android:layout_centerVertical="true"
+            android:textSize="15sp"
+            android:textColor="#000"
+            android:id="@+id/input_search"
+            android:background="@null"
+            android:hint="Enter Address, City, or Country"
+            android:textColorHint="@color/quantum_grey"
+            android:ellipsize="end"
+            android:imeOptions="actionSearch"
+            android:inputType="textAutoComplete|textAutoCorrect">
+        </EditText>
+
+        <!--<fragment android:id="@+id/autocomplete_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/ic_magnify"
+            android:layout_centerVertical="true"
+            android:hint="Enter Address, City, or Country"
+            android:textColorHint="@color/quantum_grey"
+            android:ellipsize="end"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            />-->
+
+
+
+    </RelativeLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav_id"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="start"
+        app:menu="@menu/navigation_items" />
+
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/relLayout1"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:scaleType="centerCrop"
+        android:id="@+id/ic_gps"
+        android:src="@drawable/ic_gps">
+    </ImageView>
+
+
+</RelativeLayout>
+
+
+<!--<SearchView
+android:id="@+id/sv_location"
+android:layout_width="397dp"
+android:layout_height="wrap_content"
+android:layout_alignParentEnd="true"
+android:layout_alignParentStart="true"
+android:layout_marginEnd="4dp"
+android:layout_marginStart="10dp"
+android:layout_marginTop="4dp"
+android:background="@drawable/bg_round"
+android:elevation="5dp"
+android:textColor="@android:color/black"
+app:defaultQueryHint="@string/search"
+app:iconifiedByDefault="false"
+app:queryHint="@string/search" />-->
