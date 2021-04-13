@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:padding="10dp">
+    android:padding="10dp"
+    android:background="#FFFFFF">
 
 
     <TextView
@@ -40,7 +41,7 @@
         android:layout_marginStart="10dp"
         android:layout_toEndOf="@+id/title"
         android:contentDescription="TODO"
-        android:src="@drawable/ic_favorite"></ImageView>
+        ></ImageView>
 
 
 </RelativeLayout>

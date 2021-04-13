@@ -8,8 +8,12 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.app.travelbug.data.model.ClusterMarker;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.maps.android.clustering.ClusterItem;
 
 public class PlannerActivity extends AppCompatActivity {
 
@@ -42,5 +46,12 @@ public class PlannerActivity extends AppCompatActivity {
             }
         });
         bottomNav.setSelectedItemId(R.id.planner);
+
+        //ClusterMarker marker = (ClusterMarker) getIntent().getSerializableExtra("ClusterItem");
+        //TextView textView = (TextView) findViewById(R.id.textView2);
+        //textView.setText(marker.getTitle());
+
+        //Toast.makeText(PlannerActivity.this, marker.getTitle(), Toast.LENGTH_SHORT).show();
+
     }
 }

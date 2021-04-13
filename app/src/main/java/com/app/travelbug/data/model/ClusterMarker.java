@@ -3,10 +3,12 @@ package com.app.travelbug.data.model;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
 
+import java.io.Serializable;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public class ClusterMarker implements ClusterItem {
+public class ClusterMarker implements ClusterItem, Serializable {
     private final LatLng mPosition;
     private final String mTitle;
     private final String mSnippet;
@@ -27,6 +29,14 @@ public class ClusterMarker implements ClusterItem {
 
     public LatLng getPosition() {
         return mPosition;
+    }
+
+    public double getLat() {
+        return mPosition.latitude;
+    }
+
+    public double getLng() {
+        return mPosition.longitude;
     }
 
     public String getTitle() {

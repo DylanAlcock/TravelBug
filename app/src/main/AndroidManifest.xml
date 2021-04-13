@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.app.travelbug">
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-
-
-
 
     <application
         android:allowBackup="true"
@@ -16,22 +9,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TravelBug">
-        <activity android:name="com.app.travelbug.PlannerActivity" android:parentActivityName="com.app.travelbug.MapsActivity"></activity>
-        <activity android:name="com.app.travelbug.FavoritesActivity" android:parentActivityName="com.app.travelbug.MapsActivity" />
-        <activity android:name="com.app.travelbug.ProfileActivity" android:parentActivityName="com.app.travelbug.MapsActivity"/>
+        <activity android:name=".NewAccountActivity"></activity>
         <activity
-            android:name="com.app.travelbug.ui.login.LoginActivity"
+            android:name=".PlannerActivity"
+            android:parentActivityName=".MapsActivity" />
+        <activity
+            android:name=".FavoritesActivity"
+            android:parentActivityName=".MapsActivity" />
+        <activity
+            android:name=".ProfileActivity"
+            android:parentActivityName=".MapsActivity" />
+        <activity
+            android:name=".LoginActivity"
             android:label="@string/title_activity_login">
-            <!--
-            @TODO move intent filter here when we want login page
-            -->
 
+            <!--             @TODO move intent filter here when we want login page -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-
-
-
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
-
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -41,14 +39,8 @@
              You can define the keys for the debug and release targets in src/debug/ and src/release/.
         -->
         <activity
-            android:name="com.app.travelbug.MapsActivity"
-            android:label="@string/title_activity_maps">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:name=".MapsActivity"
+            android:label="@string/title_activity_maps"></activity>
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -57,5 +49,10 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
     </application>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
 </manifest>

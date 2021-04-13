@@ -1,5 +1,6 @@
 package com.app.travelbug;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -7,10 +8,14 @@ import android.graphics.Bitmap;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 
+import com.app.travelbug.data.DatabaseHelper;
+import com.app.travelbug.data.InfoDialog;
 import com.app.travelbug.data.MyClusterManagerRenderer;
 import com.app.travelbug.data.model.ClusterMarker;
 import com.google.android.gms.common.ConnectionResult;
@@ -24,6 +29,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -55,6 +61,8 @@ import androidx.fragment.app.FragmentActivity;
 import android.location.Location;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
@@ -65,6 +73,7 @@ import android.widget.ListView;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.maps.android.collections.MarkerManager;
+import com.google.maps.android.ui.IconGenerator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,11 +88,13 @@ import android.widget.Toast;
 import org.jetbrains.annotations.NotNull;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
-        BottomNavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener {
+        BottomNavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener, InfoDialog.InfoDialogListener {
 
     //Globals
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int ERROR_DIALOG_REQUEST = 9001;
+    private static final String TAG = "MapsActivity";
 
     String[] largeCountries = new String[]{"Russia", "Canada", "USA", "United States", "China", "Brazil", "Australia"};
     List<String> largeCountriesList = Arrays.asList(largeCountries);
@@ -95,31 +106,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private EditText mSearchText;
     private ImageView mGps;
     private FusedLocationProviderClient mFusedLocationProviderClient;
-
-    private static final String TAG = "MapsActivity";
+    private boolean mLocationPermissionGranted = false;
+    private DatabaseHelper mDatabaseHelper;
 
 
     // Declare a variable for the cluster manager.
     private ClusterManager<ClusterMarker> clusterManager;
     private MyClusterManagerRenderer myClusterManagerRenderer;
     private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
-
-    private Marker mUserMarker;
-    private MarkerManager.Collection nonClusteredMarkersCollection;
-
-    private static final int ERROR_DIALOG_REQUEST = 9001;
-
-
-    // A default location (Sydney, Australia) and default zoom to use when location permission is
-    // not granted.
-    private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
-    private static final int DEFAULT_ZOOM = 15;
-    private static final int PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
-    private boolean mLocationPermissionGranted = false;
-
-
-
-    SearchView searchView;
 
 
     @Override
@@ -130,34 +124,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        mSearchText = (EditText) findViewById(R.id.input_search);
-        mGps = (ImageView) findViewById(R.id.ic_gps);
+        mSearchText = findViewById(R.id.input_search);
+        mGps = findViewById(R.id.ic_gps);
+
+        mDatabaseHelper = new DatabaseHelper(this);
+
 
         if (isServicesOK()) {
             //somethig here
         }
 
-
         checkPermissions();
         init();
-
-
-        bottomNav = (BottomNavigationView) findViewById(R.id.bottomNav_id);
-        bottomNav.setOnNavigationItemSelectedListener(this);
-        bottomNav.setSelectedItemId(R.id.map);
     }
 
 
     private void init(){
 
-        /*mGoogleApiClient = new GoogleApiClient
-                .Builder(this)
-                .addApi(Places.)
-                .addApi(Places.PLACE_DETECTION_API)
-                .enableAutoManage(this,this)
-                .build();
+        bottomNav = (BottomNavigationView) findViewById(R.id.bottomNav_id);
+        bottomNav.setOnNavigationItemSelectedListener(this);
+        bottomNav.setSelectedItemId(R.id.map);
 
-        mPlaceAutoCompleteAdapter = new PlaceAutocompleteAdapter()*/
 
         mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -206,7 +193,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             moveCamera(address, latLng);
             hideSoftKeyboard();
-
         }
     }
 
@@ -251,8 +237,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
-    private void moveCamera(Address address, LatLng latLng) {
 
+    private void moveCamera(Address address, LatLng latLng) {
         if (address.getLocality() != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 11));
         } else if (address.getAdminArea() != null) {
@@ -263,6 +249,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5));
         }
     }
+
 
     /**
      * Manipulates the map once available.
@@ -289,7 +276,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(false);
+
         }
+
 
         setUpCluster();
     }
@@ -302,54 +291,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Initialize the manager with the context and the map.
         // (Activity extends context, so we can pass 'this' in the constructor.)
         clusterManager = new ClusterManager<ClusterMarker>(this, mMap);
+        // Point the map's listeners at the listeners implemented by the cluster manager.
+
+
+
+        mMap.setOnCameraIdleListener(clusterManager);
 
         mMap.setInfoWindowAdapter(clusterManager.getMarkerManager());
 
+        //clusterManager.getMarkerManager().onMarkerClick();
+        clusterManager.setOnClusterItemClickListener(item -> true);
+        mMap.setOnMarkerClickListener(item -> true);
 
-        // Point the map's listeners at the listeners implemented by the cluster
-        // manager.
-        mMap.setOnCameraIdleListener(clusterManager);
-
-//@TODO
-
-        clusterManager.getMarkerCollection().setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-            @Override
-            public View getInfoWindow(Marker marker) {
-                final LayoutInflater inflater = LayoutInflater.from(activity);
-                final View view = inflater.inflate(R.layout.custom_info_window, null);
-                final TextView textView = view.findViewById(R.id.title);
-                String text = (marker.getTitle() != null) ? marker.getTitle() : "Cluster Item";
-                textView.setText(text);
-                return view;
-            }
-
-            @Override
-            public View getInfoContents(Marker marker) {
-                return null;
-            }
-        });
-        clusterManager.getMarkerCollection().setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
-                Toast.makeText(activity,
-                        "Info window clicked.", Toast.LENGTH_SHORT).show();
+        clusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<ClusterMarker>() {
+            public boolean onClusterItemClick(ClusterMarker item) {
+                return true;
             }
         });
 
-
-
-
-
-
-
-
-
-
-
-        //@TODO
-        //mMap.setOnMarkerClickListener(clusterManager);
-
-        // Add cluster items (markers) to the cluster manager.
         addItems();
     }
 
@@ -400,6 +359,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         clusterManager.addItem(newMarker);
         mClusterMarkers.add(newMarker);
         clusterManager.cluster();
+
+
+
+        clusterManager.setOnClusterItemClickListener(
+            new ClusterManager.OnClusterItemClickListener<ClusterMarker>() {
+                @Override public boolean onClusterItemClick(ClusterMarker clusterItem) {
+
+                    showInfoWindow(clusterItem);
+                    return true;
+                }
+            });
+        mMap.setOnMarkerClickListener(clusterManager);
     }
 
 
@@ -418,6 +389,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         startActivity(intent);
         return true;
+    }
+
+
+    public void AddData(String newEntry){
+        boolean insertData = mDatabaseHelper.addData(newEntry);
+
+        if (insertData) {
+            Toast.makeText(activity, "Data Successfully Inserted", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(activity, "Something went dsfsdf wrong", Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -508,6 +490,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });*/
     }
 
+
     public boolean isServicesOK(){
         int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity);
         if (available == ConnectionResult.SUCCESS){
@@ -524,6 +507,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    public void showInfoWindow(ClusterMarker marker){
+        InfoDialog dialog = new InfoDialog(marker);
+        dialog.show(getSupportFragmentManager(),"BottomSheet");
+    }
+
+
+    @Override
+    public void onFavoriteClicked(ClusterMarker marker) {
+        mDatabaseHelper.createPlace(marker);
+
+    }
 }
 
 

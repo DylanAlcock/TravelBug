@@ -1,6 +1,8 @@
 package com.app.travelbug.data;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
 import android.util.Log;
@@ -8,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.app.travelbug.PlannerActivity;
+import com.app.travelbug.ProfileActivity;
 import com.app.travelbug.R;
 import com.app.travelbug.data.model.ClusterMarker;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,12 +30,13 @@ public class MyClusterManagerRenderer extends DefaultClusterRenderer<ClusterMark
     private final ImageView imageView;
     private final int markerWidth;
     private final int markerHeight;
-
+    private final Context mContext;
 
     public MyClusterManagerRenderer(Context context, GoogleMap map, ClusterManager<ClusterMarker>
             clusterManager) {
         super(context, map, clusterManager);
 
+        mContext = context;
         iconGenerator = new IconGenerator(context.getApplicationContext());
         imageView = new ImageView(context.getApplicationContext());
         markerWidth = (int) context.getResources().getDimension(R.dimen.custom_marker_image);
@@ -50,12 +55,8 @@ public class MyClusterManagerRenderer extends DefaultClusterRenderer<ClusterMark
     }
 
 
-    @Override
-    public void setOnClusterItemClickListener(ClusterManager.OnClusterItemClickListener<ClusterMarker> listener) {
 
-        Log.d("ClusterManager", "CLICKED CLUSTER ITEM");
-    }
-
+    /*
     @Override
     public void setOnClusterItemInfoWindowClickListener(ClusterManager.OnClusterItemInfoWindowClickListener<ClusterMarker> listener) {
 
@@ -66,7 +67,7 @@ public class MyClusterManagerRenderer extends DefaultClusterRenderer<ClusterMark
         Log.d("ClusterManager", "CLICKED CLUSTER ITEM");
 
         return false;
-    }
+    }*/
 
 
 
