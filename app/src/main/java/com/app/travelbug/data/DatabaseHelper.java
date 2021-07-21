@@ -4,7 +4,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.app.travelbug.R;
@@ -17,6 +20,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.tabs.TabLayout;
 
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Array;
 import java.security.cert.TrustAnchor;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +36,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "usersManager";
 
     private static final String TABLE_USERS = "user_table";
-    private static final String TABLE_FAVORITES = "favorite_table";
+    private static final String TABLE_PLANNER = "planner_table";
+    private static final String TABLE_FAVORITES = "favorites_table";
     private static final String TABLE_PLACES = "place_table";
+    private static final String TABLE_TICKETS = "tickets_table";
 
 
     //USER TABLE - column names
@@ -42,9 +49,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_LNAME = "last_name";
     private static final String KEY_PASSWORD = "password";
 
-    //FAVORITES TABLE - column names
-    //private static final String KEY_USER_ID = "user_id";
-    private static final String KEY_PLACE_LIST = "place_ids";
+    //PLANNER TABLE - column names
+    private static final String KEY_PLANNER_LIST = "planner_list_name";
+    private static final String KEY_PLANNER_ITEMS = "planner_items";
+    private static final String KEY_DISTANCE = "distance_items";
 
     //PLACES TABLE - column names
     private static final String KEY_PLACE_ID = "place_id";
@@ -56,6 +64,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_ADDRESS = "address";
 
 
+    //TICKET TABLE - column names
+    private static final String KEY_TICKET_TITLE = "ticket_title";
+    private static final String KEY_TICKET_IMAGE = "ticket_image";
+
+
 
 
     // Table Create Statements
@@ -65,9 +78,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + " TEXT," + KEY_LNAME + " TEXT," + KEY_PASSWORD + " TEXT)";
 
 
-    // Favorite table create statement
+    // Planner table create statement
+    private static final String CREATE_TABLE_PLANNER = "CREATE TABLE " + TABLE_PLANNER
+            + "(" + KEY_PLANNER_LIST + " TEXT PRIMARY KEY," + KEY_PLANNER_ITEMS + " TEXT)";
+
+
+    //Favorites table create statement
     private static final String CREATE_TABLE_FAVORITES = "CREATE TABLE " + TABLE_FAVORITES
-            + "(" + KEY_EMAIL + " TEXT PRIMARY KEY," + KEY_PLACE_ID + "INTEGER" + ")";
+            + "(" + KEY_PLANNER_LIST + " TEXT PRIMARY KEY," + KEY_PLANNER_ITEMS + " TEXT," + KEY_DISTANCE + "INTEGER" + ")";
 
     // Places table create statement
     private static final String CREATE_TABLE_PLACES = "CREATE TABLE "
@@ -76,27 +94,59 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + KEY_LAT + " REAL," + KEY_LNG + " REAL)";
 
 
+    //Tickets table create statement
+    private static final String CREATE_TABLE_TICKETS = "CREATE TABLE " + TABLE_TICKETS
+            + "(" + KEY_TICKET_TITLE + " TEXT PRIMARY KEY," + KEY_TICKET_IMAGE + " TEXT)";
+
+
+
+    public static String strSeparator = "__,__";
+    public static String convertArrayToString(String[] array){
+        String str = "";
+        for (int i = 0;i<array.length; i++) {
+            str = str+array[i];
+            // Do not append comma at the end of last element
+            if(i<array.length-1){
+                str = str+strSeparator;
+            }
+        }
+        return str;
+    }
+    public static String[] convertStringToArray(String str){
+        String[] arr;
+        if (str !=null) {
+            arr = str.split(strSeparator);
+        }
+        else{
+            arr = null;
+        }
+        return arr;
+    }
 
 
 
     public DatabaseHelper(@Nullable Context context) {
-        super(context, DATABASE_NAME, null, 1);
+        super(context, DATABASE_NAME, null, 2);
     }
 
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_TABLE_USER);
+        db.execSQL(CREATE_TABLE_PLANNER);
         db.execSQL(CREATE_TABLE_FAVORITES);
         db.execSQL(CREATE_TABLE_PLACES);
+        db.execSQL(CREATE_TABLE_TICKETS);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // on upgrade drop older tables
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_PLANNER);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_FAVORITES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_PLACES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_TICKETS);
 
         onCreate(db);
     }
@@ -225,6 +275,92 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
 
+    //*****  ALL Planner DB OPERATIONS *****//
+
+    public void createPlanner(String plannerName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+
+        values.put(KEY_PLANNER_LIST, plannerName);
+
+        // insert row
+        db.insert(TABLE_PLANNER, null, values);
+
+    }
+
+
+
+    public ArrayList<String> getPlans() {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        ArrayList<String> plannerList = new ArrayList<String>();
+        String dbString = "";
+
+        String selectQuery = "SELECT " + KEY_PLANNER_LIST + " FROM " + TABLE_PLANNER + " WHERE 1";
+
+        Log.e(TAG, selectQuery);
+
+        Cursor c = db.rawQuery(selectQuery, null);
+
+        if (c.moveToFirst()) {
+            do {
+                plannerList.add(c.getString(c.getColumnIndex(KEY_PLANNER_LIST)));
+            } while (c.moveToNext());
+        }
+
+        return plannerList;
+    }
+
+
+
+
+
+    public String getItemsFromPlan(String planName){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor c = db.rawQuery("SELECT  * FROM " + TABLE_PLANNER + " WHERE "
+                + KEY_PLANNER_LIST + " = ?", new String[]{planName});
+
+        if (c != null)
+            c.moveToFirst();
+        else {
+            return null;
+        }
+
+        return (c.getString(c.getColumnIndex(KEY_PLANNER_ITEMS)));
+    }
+
+
+    // Add item to planner
+    public int addItemToPlan(String planName, String item) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String planItems = getItemsFromPlan(planName);
+
+        if (planItems != null){
+            planItems = planItems + strSeparator +item;
+        } else {
+            planItems = item;
+        }
+
+        ContentValues values = new ContentValues();
+        values.put(KEY_PLANNER_ITEMS, planItems);
+        return db.update(TABLE_PLANNER, values, KEY_PLANNER_LIST + " = '" + planName + "'", null);
+
+    }
+
+
+
+    // Deleting a plan
+    public void deletePlan(String planName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_PLANNER, KEY_PLANNER_LIST + " = ?",
+                new String[] {planName});
+    }
+
+
+
 
     //*****  ALL FAVORITES DB OPERATIONS *****//
 
@@ -240,6 +376,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_LAT, place.getLat());
         values.put(KEY_LNG, place.getLng());
 
+        // @TODO NEED TO SAVE IMAGES INTO DATABASE
 
         // insert row
         long user_id = db.insert(TABLE_PLACES, null, values);
@@ -381,6 +518,97 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 new String[] { String.valueOf(place_id) });
     }
 
+
+
+    //
+    public void addTicket(String name, String image) throws SQLiteException {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new  ContentValues();
+        cv.put(KEY_TICKET_TITLE,    name);
+        cv.put(KEY_TICKET_IMAGE,   image);
+        db.insert( TABLE_TICKETS, null, cv);
+    }
+
+    public void deleteTicket(String name, String image){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_TICKETS, KEY_TICKET_TITLE + " == ? AND " + KEY_TICKET_IMAGE + " == ?" , new String[] {name, image});
+    }
+
+    //----------Old method when saving bitmap of image
+    /*public ArrayList<Bitmap> fetchTicketImages(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        String selectQuery = "SELECT " + KEY_TICKET_IMAGE + " FROM " + TABLE_TICKETS ;
+        Log.e(TAG, selectQuery);
+
+        Cursor c = db.rawQuery(selectQuery, null);
+
+        Bitmap bitmap;
+        ArrayList<Bitmap> bitmaps = new ArrayList<Bitmap>();
+
+        if (c.moveToFirst()) {
+            do {
+                byte[] blob = c.getBlob(c.getColumnIndex(KEY_TICKET_IMAGE));
+                bitmap = getImage(blob);
+                bitmaps.add(bitmap);
+            } while (c.moveToNext());
+        }
+
+        return bitmaps;
+    }*/
+
+    public ArrayList<String> fetchTicketImages(){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String selectQuery = "SELECT " + KEY_TICKET_IMAGE + " FROM " + TABLE_TICKETS + " ORDER BY ROWID";
+        Log.e(TAG, selectQuery);
+
+        Cursor c = db.rawQuery(selectQuery, null);
+        ArrayList<String> images = new ArrayList<String>();
+
+
+        if (c.moveToFirst()) {
+            do {
+                images.add(c.getString(c.getColumnIndex(KEY_TICKET_IMAGE)));
+            } while (c.moveToNext());
+        }
+
+        return images;
+    }
+
+
+    public ArrayList<String> fetchTicketNames(){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String selectQuery = "SELECT " + KEY_TICKET_TITLE + " FROM " + TABLE_TICKETS + " ORDER BY ROWID";
+        Log.e(TAG, selectQuery);
+
+        Cursor c = db.rawQuery(selectQuery, null);
+        ArrayList<String> names = new ArrayList<String>();
+
+
+        if (c.moveToFirst()) {
+            do {
+                Log.e(TAG, c.getString(c.getColumnIndex(KEY_TICKET_TITLE)));
+                names.add(c.getString(c.getColumnIndex(KEY_TICKET_TITLE)));
+            } while (c.moveToNext());
+        }
+
+
+        return names;
+    }
+
+
+    // convert from bitmap to byte array
+    public static byte[] getBytes(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+        return stream.toByteArray();
+    }
+
+    // convert from byte array to bitmap
+    public static Bitmap getImage(byte[] image) {
+        return BitmapFactory.decodeByteArray(image, 0, image.length);
+    }
 
 
     // closing database

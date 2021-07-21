@@ -57,6 +57,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import android.database.CursorWindow;
+import java.lang.reflect.Field;
+
 
 import android.location.Location;
 import android.util.Log;
@@ -128,6 +131,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mGps = findViewById(R.id.ic_gps);
 
         mDatabaseHelper = new DatabaseHelper(this);
+
+        try {
+            Field field = CursorWindow.class.getDeclaredField("sCursorWindowSize");
+            field.setAccessible(true);
+            field.set(null, 100 * 1024 * 1024); //the 100MB is the new size
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 
         if (isServicesOK()) {
@@ -385,7 +396,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else if (id == R.id.favorites) {
             intent = new Intent(activity, FavoritesActivity.class);
         } else if (id == R.id.profile) {
-            intent = new Intent(activity, ProfileActivity.class);
+            intent = new Intent(activity, TicketInfoActivity.class);
         }
         startActivity(intent);
         return true;

@@ -29,5 +29,6 @@
     <string name="title_activity_profile">ProfileActivity</string>
     <string name="status">Status:</string>
     <string name="deleteTask">Delete Task</string>
+    <string name="plannerName">Planner Name</string>
 
 </resources>
